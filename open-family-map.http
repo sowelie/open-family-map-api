@@ -1,0 +1,6 @@
+@open_family_map_HostAddress = http://localhost:5089
+
+GET {{open_family_map_HostAddress}}/weatherforecast/
+Accept: application/json
+
+###
