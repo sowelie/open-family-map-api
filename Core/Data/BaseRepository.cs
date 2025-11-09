@@ -5,71 +5,56 @@ namespace OpenFamilyMapAPI.Core.Data;
 
 public class BaseRepository<TEntity> : IBaseRepository<TEntity> where TEntity : class
 {
-    internal OpenFamilyMapContext context;
-    internal DbSet<TEntity> dbSet;
+    internal OpenFamilyMapContext _context;
+    internal DbSet<TEntity> _dbSet;
 
     public BaseRepository(OpenFamilyMapContext context)
     {
-        this.context = context;
-        this.dbSet = context.Set<TEntity>();
+        _context = context;
+        _dbSet = context.Set<TEntity>();
     }
 
-    public virtual IEnumerable<TEntity> Get(
-        Expression<Func<TEntity, bool>> filter = null,
-        Func<IQueryable<TEntity>, IOrderedQueryable<TEntity>> orderBy = null,
-        string includeProperties = "")
-    {
-        IQueryable<TEntity> query = dbSet;
-
-        if (filter != null)
+    public async Task AddAsync(TEntity entity)
         {
-            query = query.Where(filter);
+            await _dbSet.AddAsync(entity);
+            await SaveAsync();
         }
 
-        foreach (var includeProperty in includeProperties.Split
-            (new char[] { ',' }, StringSplitOptions.RemoveEmptyEntries))
+        public async Task DeleteByIdAsync(int id)
         {
-            query = query.Include(includeProperty);
+            var entityToDelete = await _dbSet.FindAsync(id);
+
+            if (entityToDelete != null)
+            {
+                _dbSet.Remove(entityToDelete);
+                await SaveAsync();
+            }
+        }
+        public async Task<TEntity> GetByIdAsync(int id)
+        {
+            return await _dbSet.FindAsync(id);
         }
 
-        if (orderBy != null)
+        public async Task<List<TEntity>> GetAllAsync(bool tracked = true)
         {
-            return orderBy(query).ToList();
+            IQueryable<TEntity> query = _dbSet;
+
+            if (!tracked)
+            {
+                query = query.AsNoTracking();
+            }
+
+            return await query.ToListAsync();
         }
-        else
+
+        public async Task UpdateAsync(TEntity entity)
         {
-            return query.ToList();
+            _dbSet.Update(entity);
+            await SaveAsync();
         }
-    }
 
-    public virtual TEntity GetByID(object id)
-    {
-        return dbSet.Find(id);
-    }
-
-    public virtual void Insert(TEntity entity)
-    {
-        dbSet.Add(entity);
-    }
-
-    public virtual void Delete(object id)
-    {
-        TEntity entityToDelete = dbSet.Find(id);
-        Delete(entityToDelete);
-    }
-
-    public virtual void Delete(TEntity entityToDelete)
-    {
-        if (context.Entry(entityToDelete).State == EntityState.Detached)
+        public async Task SaveAsync()
         {
-            dbSet.Attach(entityToDelete);
+            await _context.SaveChangesAsync();
         }
-        dbSet.Remove(entityToDelete);
-    }
-
-    public virtual void Update(TEntity entityToUpdate)
-    {
-        dbSet.Attach(entityToUpdate);
-        context.Entry(entityToUpdate).State = EntityState.Modified;
-    }
 }

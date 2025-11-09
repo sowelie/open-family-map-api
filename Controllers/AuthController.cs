@@ -3,6 +3,7 @@ using System.Security.Claims;
 using System.Text;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.IdentityModel.Tokens;
+using OpenFamilyMapAPI.Models;
 
 [ApiController]
 [Route("api/[controller]")]
@@ -11,9 +12,9 @@ public class AuthController : ControllerBase
     [HttpPost("login")]
     public IActionResult Login([FromBody] UserLogin user)
     {
-        if (user.Username == "admin" && user.Password == "password")
+        if (user.Login == "admin" && user.Password == "password")
         {
-            var token = GenerateJwtToken(user.Username);
+            var token = GenerateJwtToken(user.Login);
             return Ok(new { token });
         }
         return Unauthorized();
