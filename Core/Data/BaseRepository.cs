@@ -15,46 +15,46 @@ public class BaseRepository<TEntity> : IBaseRepository<TEntity> where TEntity : 
     }
 
     public async Task AddAsync(TEntity entity)
+    {
+        await _dbSet.AddAsync(entity);
+        await SaveAsync();
+    }
+
+    public async Task DeleteByIdAsync(int id)
+    {
+        var entityToDelete = await _dbSet.FindAsync(id);
+
+        if (entityToDelete != null)
         {
-            await _dbSet.AddAsync(entity);
+            _dbSet.Remove(entityToDelete);
             await SaveAsync();
         }
+    }
+    public async Task<TEntity> GetByIdAsync(int id)
+    {
+        return await _dbSet.FindAsync(id);
+    }
 
-        public async Task DeleteByIdAsync(int id)
+    public async Task<List<TEntity>> GetAllAsync(bool tracked = true)
+    {
+        IQueryable<TEntity> query = _dbSet;
+
+        if (!tracked)
         {
-            var entityToDelete = await _dbSet.FindAsync(id);
-
-            if (entityToDelete != null)
-            {
-                _dbSet.Remove(entityToDelete);
-                await SaveAsync();
-            }
-        }
-        public async Task<TEntity> GetByIdAsync(int id)
-        {
-            return await _dbSet.FindAsync(id);
-        }
-
-        public async Task<List<TEntity>> GetAllAsync(bool tracked = true)
-        {
-            IQueryable<TEntity> query = _dbSet;
-
-            if (!tracked)
-            {
-                query = query.AsNoTracking();
-            }
-
-            return await query.ToListAsync();
+            query = query.AsNoTracking();
         }
 
-        public async Task UpdateAsync(TEntity entity)
-        {
-            _dbSet.Update(entity);
-            await SaveAsync();
-        }
+        return await query.ToListAsync();
+    }
 
-        public async Task SaveAsync()
-        {
-            await _context.SaveChangesAsync();
-        }
+    public async Task UpdateAsync(TEntity entity)
+    {
+        _dbSet.Update(entity);
+        await SaveAsync();
+    }
+
+    public async Task SaveAsync()
+    {
+        await _context.SaveChangesAsync();
+    }
 }

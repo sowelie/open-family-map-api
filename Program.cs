@@ -1,31 +1,47 @@
 using System.Text;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
+using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
 using OpenFamilyMapAPI.Core.Data;
+using OpenFamilyMapAPI.Repositories;
+using OpenFamilyMapAPI.Services;
 
 var builder = WebApplication.CreateBuilder(args);
 
 // Add services to the container.
 // Learn more about configuring OpenAPI at https://aka.ms/aspnet/openapi
 builder.Services.AddOpenApi();
+builder.Services.AddTransient<UserRepository>();
+builder.Services.AddSingleton<InitializationService>();
 
-builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
-    .AddJwtBearer(options =>
-    {
-        options.TokenValidationParameters = new TokenValidationParameters
-        {
-            ValidateIssuer = true,
-            ValidateAudience = true,
-            ValidateLifetime = true,
-            ValidateIssuerSigningKey = true,
-            ValidIssuer = "yourdomain.com",
-            ValidAudience = "yourdomain.com",
-            IssuerSigningKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes("your_super_secret_key"))
-        };
-    });
+// builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
+//     .AddJwtBearer(options =>
+//     {
+//         options.TokenValidationParameters = new TokenValidationParameters
+//         {
+//             ValidateIssuer = true,
+//             ValidateAudience = true,
+//             ValidateLifetime = true,
+//             ValidateIssuerSigningKey = true,
+//             ValidIssuer = "yourdomain.com",
+//             ValidAudience = "yourdomain.com",
+//             IssuerSigningKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes("your_super_secret_key"))
+//         };
+//     });
 
-builder.Services.AddAuthorization();
-builder.Services.AddDbContext<OpenFamilyMapContext>();
+// builder.Services.AddAuthorization();
+builder.Configuration.AddEnvironmentVariables(prefix: "OPENFAMILYMAP_");
+
+builder.Services.AddTransient<OpenFamilyMapContext>(provider =>
+{
+    //resolve another classes from DI
+    var config = provider.GetService<IConfiguration>();
+
+    //pass any parameters
+    return new OpenFamilyMapContext(config!);
+});
+
+builder.Services.AddAutoMapper(typeof(MappingProfile));
 builder.Services.AddControllers();
 
 var app = builder.Build();
@@ -38,7 +54,14 @@ if (app.Environment.IsDevelopment())
 
 app.UseAuthentication();
 app.UseAuthorization();
-app.UseHttpsRedirection();
 app.MapControllers();
+
+// run database migrations at startup
+var db = app.Services.GetRequiredService<OpenFamilyMapContext>();
+await db.Database.MigrateAsync();
+
+// trigger the initialization service
+var init = app.Services.GetRequiredService<InitializationService>();
+await init.Initialize();
 
 app.Run();

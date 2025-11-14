@@ -68,17 +68,6 @@ namespace open_family_map.Migrations
                     b.HasKey("Id");
 
                     b.ToTable("Users");
-
-                    b.HasData(
-                        new
-                        {
-                            Id = 1,
-                            CreatedDate = new DateTime(2025, 11, 9, 0, 0, 0, 0, DateTimeKind.Unspecified),
-                            DisplayName = "Admin User",
-                            Login = "admin",
-                            Password = "pCNO/Dkf+OKKIzyJjen5sA==",
-                            UpdatedDate = new DateTime(2025, 11, 9, 0, 0, 0, 0, DateTimeKind.Unspecified)
-                        });
                 });
 
             modelBuilder.Entity("OpenFamilyMapAPI.Entities.LocationDetail", b =>

@@ -54,11 +54,6 @@ namespace open_family_map.Migrations
                 })
                 .Annotation("MySQL:Charset", "utf8mb4");
 
-            migrationBuilder.InsertData(
-                table: "Users",
-                columns: new[] { "Id", "CreatedDate", "DisplayName", "Login", "Password", "UpdatedDate" },
-                values: new object[] { 1, new DateTime(2025, 11, 9, 0, 0, 0, 0, DateTimeKind.Unspecified), "Admin User", "admin", "pCNO/Dkf+OKKIzyJjen5sA==", new DateTime(2025, 11, 9, 0, 0, 0, 0, DateTimeKind.Unspecified) });
-
             migrationBuilder.CreateIndex(
                 name: "IX_LocationDetail_UserId",
                 table: "LocationDetail",

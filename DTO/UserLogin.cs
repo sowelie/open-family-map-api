@@ -1,6 +1,6 @@
-namespace OpenFamilyMapAPI.Models;
+namespace OpenFamilyMapAPI.DTO;
 
-public class UserLogin
+public class UserLoginDTO
 {
     public required string Login { get; set; }
     public required string Password { get; set; }
