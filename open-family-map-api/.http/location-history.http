@@ -1,0 +1,45 @@
+
+### login
+# @name login
+POST http://localhost:5089/auth/login
+Content-Type: application/json
+
+{ 
+    "login": "admin", 
+    "password": "mycoolpassword" 
+}
+
+### save the token
+@token = {{login.response.body.token}}
+
+### add location detail
+POST http://localhost:5089/locationHistory/update
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{
+  "locationUpdateDate": "2025-11-16T16:35:40Z",
+  "userId": 1,
+
+  "platform": "android",
+  "rawProvider": "gps",
+
+  "latitude": 37.7749,
+  "longitude": -122.4194,
+
+  "altitudeMeters": 15.2,
+  "verticalAccuracyMeters": 3.5,
+
+  "horizontalAccuracyMeters": 4.1,
+
+  "bearingDegrees": 180.0,
+  "bearingAccuracyDegrees": 12.0,
+
+  "speedMetersPerSecond": 1.8,
+  "speedAccuracyMetersPerSecond": 0.5,
+
+  "elapsedRealtimeSinceBoot": "00:23:15",
+
+  "floorLevel": 2,
+  "isMock": false
+}
