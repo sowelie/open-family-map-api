@@ -81,3 +81,5 @@ iisexpress/
 *.env
 .env.*
 *.development.json
+
+docker-compose.yml
