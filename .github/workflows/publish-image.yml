@@ -1,4 +1,4 @@
-name: Build & Publish Docker Image + Create Release
+name: Build & Publish Docker Image
 
 # 1️⃣  Trigger on *any* tag creation or push of an existing tag
 on:
