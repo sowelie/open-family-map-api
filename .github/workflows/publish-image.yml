@@ -2,49 +2,51 @@ name: Build & Publish Docker Image
 
 # 1️⃣  Trigger on *any* tag creation or push of an existing tag
 on:
-  push:
-    tags:          #  <-- Only run for tags
-      - '*'
+    push:
+        tags: #  <-- Only run for tags
+            - "*"
 
 env:
-  # The image will be tagged with the exact tag name that triggered the workflow
-  IMAGE_NAME: ghcr.io/${{ github.repository_owner }}/${{ github.repository }}
+    # The image will be tagged with the exact tag name that triggered the workflow
+    IMAGE_NAME: ghcr.io/${{ github.repository_owner }}/${{ github.repository }}
 
 jobs:
-  build-and-publish:
-    runs-on: ubuntu-latest
-    permissions:
-      # Needed for `docker/login-action` (write to GHCR) and for creating a release
-      contents: read
-      packages: write
-      actions: read
-      security-events: read   # optional, just a safety net
-    steps:
+    build-and-publish:
+        runs-on: ubuntu-latest
+        permissions:
+            # Needed for `docker/login-action` (write to GHCR) and for creating a release
+            contents: read
+            packages: write
+            actions: read
+            security-events: read # optional, just a safety net
+        steps:
+            # 2️⃣  Grab your source code
+            - name: Checkout repository
+              uses: actions/checkout@v4
 
-      # 2️⃣  Grab your source code
-      - name: Checkout repository
-        uses: actions/checkout@v4
+            # 4️⃣  Log into GitHub Container Registry
+            - name: Log in to GHCR
+              uses: docker/login-action@v3
+              with:
+                  registry: ghcr.io
+                  username: ${{ github.repository_owner }}
+                  password: ${{ secrets.GITHUB_TOKEN }}
 
-      # 4️⃣  Log into GitHub Container Registry
-      - name: Log in to GHCR
-        uses: docker/login-action@v3
-        with:
-          registry: ghcr.io
-          username: ${{ github.repository_owner }}
-          password: ${{ secrets.GITHUB_TOKEN }}
+            # 5️⃣  Build & Tag the image
+            - name: Build and tag
+              env:
+                  DOCKERFILE_PATH: open-family-map-api/Dockerfile
+                  CONTEXT_PATH: open-family-map-api/
+              run: |
+                  TAG=${{ github.ref_name }}   #   (e.g. v1.0.0 or 2023.05.01)
+                  docker build --pull -t $IMAGE_NAME:$TAG .
+                  # optional: docker image tag for "latest"
+                  docker tag $IMAGE_NAME:$TAG $IMAGE_NAME:latest
 
-      # 5️⃣  Build & Tag the image
-      - name: Build and tag
-        run: |
-          TAG=${{ github.ref_name }}   #   (e.g. v1.0.0 or 2023.05.01)
-          docker build --pull -t $IMAGE_NAME:$TAG .
-          # optional: docker image tag for "latest"
-          docker tag $IMAGE_NAME:$TAG $IMAGE_NAME:latest
-
-      # 6️⃣  Push the image to GHCR
-      - name: Push image
-        run: |
-          TAG=${{ github.ref_name }}
-          docker push $IMAGE_NAME:$TAG
-          # Push latest tag if you added it above
-          docker push $IMAGE_NAME:latest
+            # 6️⃣  Push the image to GHCR
+            - name: Push image
+              run: |
+                  TAG=${{ github.ref_name }}
+                  docker push $IMAGE_NAME:$TAG
+                  # Push latest tag if you added it above
+                  docker push $IMAGE_NAME:latest
