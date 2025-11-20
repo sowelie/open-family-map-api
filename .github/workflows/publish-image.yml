@@ -38,10 +38,15 @@ jobs:
                   DOCKERFILE_PATH: open-family-map-api/Dockerfile
                   CONTEXT_PATH: open-family-map-api/
               run: |
-                  TAG=${{ github.ref_name }}   #   (e.g. v1.0.0 or 2023.05.01)
-                  docker build --pull -t $IMAGE_NAME:$TAG .
-                  # optional: docker image tag for "latest"
-                  docker tag $IMAGE_NAME:$TAG $IMAGE_NAME:latest
+                    TAG=${{ github.ref_name }}
+
+                    # Build (the `dockerfile:` keyword is optional if the file is named
+                    # `Dockerfile` and sits next to the build‑context folder)
+                    docker build \
+                        --file "$DOCKERFILE_PATH" \
+                        --tag "$IMAGE_NAME:$TAG" \
+                        --tag "$IMAGE_NAME:latest" \
+                        "$CONTEXT_PATH"
 
             # 6️⃣  Push the image to GHCR
             - name: Push image
