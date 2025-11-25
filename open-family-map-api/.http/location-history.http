@@ -6,7 +6,7 @@ Content-Type: application/json
 
 { 
     "login": "admin", 
-    "password": "mycoolpassword" 
+    "password": "myadminpassword"
 }
 
 ### save the token

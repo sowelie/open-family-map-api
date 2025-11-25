@@ -65,9 +65,6 @@ TestResults/
 *.pubxml
 *.pubxml.user
 
-# Entity Framework
-Migrations/
-
 # IIS Express
 iisexpress/
 *.vspscc

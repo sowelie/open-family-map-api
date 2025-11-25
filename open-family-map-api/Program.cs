@@ -20,6 +20,11 @@ builder.Services.AddSingleton<InitializationService>();
 builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
     .AddJwtBearer(options =>
     {
+        if (!builder.Environment.IsDevelopment())
+        {
+            options.RequireHttpsMetadata = true;
+        }
+
         options.TokenValidationParameters = new TokenValidationParameters
         {
             ValidateIssuer = true,
