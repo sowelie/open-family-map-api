@@ -8,25 +8,21 @@ using OpenFamilyMapAPI.DTO;
 using OpenFamilyMapAPI.Repositories;
 using Microsoft.AspNetCore.Authorization;
 using System.Security.Cryptography;
+using OpenFamilyMapAPI.Services;
+using System.Threading.Tasks;
 
 namespace OpenFamilyMapAPI.Controllers;
 
 [ApiController]
 [Route("[controller]")]
-public class AuthController : ControllerBase
+public class AuthController(UserRepository userRepository, IJWTService jwtService) : ControllerBase
 {
-    private readonly UserRepository _userRepository;
-    private readonly IConfiguration _config;
-
-    public AuthController(UserRepository userRepository, IConfiguration config)
-    {
-        _userRepository = userRepository;
-        _config = config;
-    }
+    private readonly UserRepository _userRepository = userRepository;
+    private readonly IJWTService _jwtService = jwtService;
 
     [HttpPost("login")]
     [AllowAnonymous]
-    public IActionResult Login([FromBody] UserLoginDTO loginInfo)
+    public async Task<IActionResult> Login([FromBody] UserLoginDTO loginInfo)
     {
         // find the user by the login
         User? user = _userRepository.FindByLogin(loginInfo.Login);
@@ -36,43 +32,53 @@ public class AuthController : ControllerBase
         {
             rng.GetBytes(key);
         }
-        var result = Convert.ToBase64String(key);
 
         // compare the login (to ensure case sensitivity) and the password
         if (user != null && user.Login == loginInfo.Login && user.Password == loginInfo.Password)
         {
-            var token = GenerateJwtToken(user);
+            var token = _jwtService.Generate(user);
+            var refreshToken = await _jwtService.GenerateRefreshAsync(user);
 
-            return Ok(new { token });
+            SetCookie(refreshToken);
+
+            return Ok(new { accessToken = token, refreshToken });
         }
 
         return Unauthorized();
     }
 
-    private string GenerateJwtToken(User user)
+    [AllowAnonymous]
+    [HttpPost("refresh")]
+    public async Task<IActionResult> Refresh([FromBody] RefreshRequest req)
     {
-        var claims = new List<Claim>
-        {
-            new(JwtRegisteredClaimNames.Sub, user.Login),
-            new(JwtRegisteredClaimNames.Jti, Guid.NewGuid().ToString())
-        };
+        // Accept the token from a cookie or body
+        var token = req.RefreshToken ?? Request.Cookies["refreshToken"];
+        if (string.IsNullOrEmpty(token)) return Unauthorized();
 
-        if (user.IsAdmin)
-        {
-            claims.Add(new Claim(ClaimTypes.Role, "Admin"));
-        }
+        var rt = await _jwtService.ValidateAsync(token);
+        if (rt == null) return Unauthorized();
 
-        var key = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(_config["JWT:SigningKey"]
-            ?? throw new InvalidOperationException("No JWT:SigningKey property has been specified")));
-        var creds = new SigningCredentials(key, SecurityAlgorithms.HmacSha256);
+        // Rotate – issue brand new tokens
+        var newAccess  = _jwtService.Generate(rt.User);
+        var newRefresh = await _jwtService.GenerateRefreshAsync(rt.User);
 
-        var token = new JwtSecurityToken(
-            issuer: _config["JWT:Issuer"] ?? "https://localhost:7089",
-            audience: _config["JWT:Audience"] ?? "https://localhost:7089",
-            claims: claims,
-            expires: DateTime.Now.AddMinutes(30),
-            signingCredentials: creds);
+        SetCookie(newRefresh);
 
-        return new JwtSecurityTokenHandler().WriteToken(token);
+        return Ok(new { accessToken = newAccess, refreshToken = newRefresh });   // or just return the access token and cookie
+    }
+
+    private void SetCookie(string newRefresh)
+    {
+        // Set new cookie (overwrite)
+        Response.Cookies.Append(
+            "refreshToken",
+            newRefresh,
+            new CookieOptions
+            {
+                HttpOnly = true,
+                Secure = true,
+                SameSite = SameSiteMode.Strict,
+                Expires = DateTimeOffset.UtcNow.Add(JWTService.TokenValidity)
+            });
     }
 }

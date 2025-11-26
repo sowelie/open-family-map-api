@@ -1,31 +1,37 @@
 using System.Threading.Tasks;
+using Microsoft.EntityFrameworkCore;
 using OpenFamilyMapAPI.Core.Data;
 using OpenFamilyMapAPI.Entities;
 using OpenFamilyMapAPI.Repositories;
 
 namespace OpenFamilyMapAPI.Services;
 
-public class InitializationService
+public class InitializationService(IConfiguration configuration, IServiceScopeFactory serviceScopeFactory) : IHostedService
 {
-    private readonly UserRepository _userRepository;
-    private readonly IConfiguration _config;
+    private readonly IConfiguration _config = configuration;
+    private readonly IServiceScopeFactory _scopeFactory = serviceScopeFactory;
 
-    public InitializationService(UserRepository userRepository, IConfiguration configuration)
+    public async Task StartAsync(CancellationToken cancellationToken)
     {
-        _userRepository = userRepository;
-        _config = configuration;
-    }
+        using var scope = _scopeFactory.CreateScope();
+        var db = scope.ServiceProvider.GetRequiredService<OpenFamilyMapContext>();
+        var userRepository = scope.ServiceProvider.GetRequiredService<UserRepository>();
 
-    public async Task Initialize()
-    {
+        await db.Database.MigrateAsync();
+
         // check to see if the admin user has been created
-        User user = _userRepository.FindByLogin("admin") ?? new User();
+        User user = userRepository.FindByLogin("admin") ?? new User();
 
         user.DisplayName = _config["AdminUser:DisplayName"] ?? "Admin user";
         user.Login = _config["AdminUser:Login"] ?? "admin";
         user.Password = _config["AdminUser:Password"] ?? throw new InvalidOperationException("The admin user's password must be specified using the OPENFAMILYMAP_ADMINUSER__PASSWORD environment variable.");
         user.IsAdmin = true;
 
-        await _userRepository.UpdateAsync(user);
+        await userRepository.UpdateAsync(user);
+    }
+
+    public Task StopAsync(CancellationToken cancellationToken)
+    {
+        return Task.CompletedTask;
     }
 }

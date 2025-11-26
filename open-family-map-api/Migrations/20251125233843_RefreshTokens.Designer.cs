@@ -2,6 +2,7 @@
 using System;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using OpenFamilyMapAPI.Core.Data;
 
@@ -10,9 +11,11 @@ using OpenFamilyMapAPI.Core.Data;
 namespace open_family_map.Migrations
 {
     [DbContext(typeof(OpenFamilyMapContext))]
-    partial class OpenFamilyMapContextModelSnapshot : ModelSnapshot
+    [Migration("20251125233843_RefreshTokens")]
+    partial class RefreshTokens
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder

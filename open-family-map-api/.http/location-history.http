@@ -10,7 +10,7 @@ Content-Type: application/json
 }
 
 ### save the token
-@token = {{login.response.body.token}}
+@token = {{login.response.body.accessToken}}
 
 ### add location detail
 POST http://localhost:5089/locationHistory/update
@@ -43,3 +43,10 @@ Content-Type: application/json
   "floorLevel": 2,
   "isMock": false
 }
+
+### refresh
+POST http://localhost:5089/auth/refresh
+Content-Type: application/json
+Cookie: refreshToken={{login.response.body.refreshToken}}
+
+{}

@@ -8,18 +8,14 @@ using OpenFamilyMapAPI.Entities;
 
 namespace OpenFamilyMapAPI.Core.Data;
 
-public class OpenFamilyMapContext : DbContext
+public class OpenFamilyMapContext(DbContextOptions<OpenFamilyMapContext> options, IConfiguration configuration) : DbContext(options)
 {
-    private readonly IEncryptionProvider _encryptionProvider;
-    private readonly IConfiguration _configuration;
+    private readonly IEncryptionProvider _encryptionProvider = new GenerateEncryptionProvider(configuration["Database:EncryptionKey"]);
+    private readonly IConfiguration _configuration = configuration;
 
     public DbSet<User> Users { get; set; }
-
-    public OpenFamilyMapContext(IConfiguration configuration)
-    {
-        _encryptionProvider = new GenerateEncryptionProvider(configuration["Database:EncryptionKey"]);
-        _configuration = configuration;
-    }
+    public DbSet<RefreshToken> RefreshTokens { get; set; }
+    public DbSet<LocationDetail> LocationDetails { get; set; }
 
     protected override void OnConfiguring(DbContextOptionsBuilder optionsBuilder)
     {

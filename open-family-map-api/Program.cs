@@ -11,11 +11,15 @@ var builder = WebApplication.CreateBuilder(args);
 builder.Configuration.AddEnvironmentVariables(prefix: "OPENFAMILYMAP_");
 
 // Add services to the container.
+builder.Services.AddDbContext<OpenFamilyMapContext>();
+
 // Learn more about configuring OpenAPI at https://aka.ms/aspnet/openapi
 builder.Services.AddOpenApi();
 builder.Services.AddTransient<UserRepository>();
 builder.Services.AddTransient<LocationDetailRepository>();
-builder.Services.AddSingleton<InitializationService>();
+builder.Services.AddTransient<InitializationService>();
+builder.Services.AddTransient<IJWTService, JWTService>();
+builder.Services.AddHostedService<InitializationService>();
 
 builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
     .AddJwtBearer(options =>
@@ -38,16 +42,6 @@ builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
     });
 
 builder.Services.AddAuthorization();
-
-builder.Services.AddTransient(provider =>
-{
-    //resolve another classes from DI
-    var config = provider.GetService<IConfiguration>();
-
-    //pass any parameters
-    return new OpenFamilyMapContext(config!);
-});
-
 builder.Services.AddAutoMapper(typeof(MappingProfile));
 builder.Services.AddControllers();
 
@@ -63,13 +57,5 @@ app.UseAuthentication();
 app.UseAuthorization();
 app.MapControllers()
     .RequireAuthorization();
-
-// run database migrations at startup
-var db = app.Services.GetRequiredService<OpenFamilyMapContext>();
-await db.Database.MigrateAsync();
-
-// trigger the initialization service
-var init = app.Services.GetRequiredService<InitializationService>();
-await init.Initialize();
 
 app.Run();
