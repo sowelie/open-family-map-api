@@ -12,6 +12,7 @@ builder.Configuration.AddEnvironmentVariables(prefix: "OPENFAMILYMAP_");
 
 // Add services to the container.
 builder.Services.AddDbContext<OpenFamilyMapContext>();
+builder.Services.AddHttpContextAccessor();
 
 // Learn more about configuring OpenAPI at https://aka.ms/aspnet/openapi
 builder.Services.AddOpenApi();
@@ -20,6 +21,7 @@ builder.Services.AddTransient<LocationDetailRepository>();
 builder.Services.AddTransient<InitializationService>();
 builder.Services.AddTransient<IJWTService, JWTService>();
 builder.Services.AddHostedService<InitializationService>();
+builder.Services.AddScoped<AuthService>();
 
 builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
     .AddJwtBearer(options =>

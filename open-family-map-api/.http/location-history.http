@@ -12,6 +12,10 @@ Content-Type: application/json
 ### save the token
 @token = {{login.response.body.accessToken}}
 
+### get user info
+GET http://localhost:5089/auth/userInfo
+Authorization: Bearer {{token}}
+
 ### add location detail
 POST http://localhost:5089/locationHistory/update
 Authorization: Bearer {{token}}

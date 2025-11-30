@@ -10,15 +10,23 @@ using Microsoft.AspNetCore.Authorization;
 using System.Security.Cryptography;
 using OpenFamilyMapAPI.Services;
 using System.Threading.Tasks;
+using AutoMapper;
 
 namespace OpenFamilyMapAPI.Controllers;
 
 [ApiController]
 [Route("[controller]")]
-public class AuthController(UserRepository userRepository, IJWTService jwtService) : ControllerBase
+public class AuthController(
+    UserRepository userRepository, 
+    IJWTService jwtService,
+    AuthService authService,
+    IMapper mapper
+) : ControllerBase
 {
     private readonly UserRepository _userRepository = userRepository;
     private readonly IJWTService _jwtService = jwtService;
+    private readonly AuthService _authService = authService;
+    private readonly IMapper _mapper = mapper;
 
     [HttpPost("login")]
     [AllowAnonymous]
@@ -65,6 +73,12 @@ public class AuthController(UserRepository userRepository, IJWTService jwtServic
         SetCookie(newRefresh);
 
         return Ok(new { accessToken = newAccess, refreshToken = newRefresh });   // or just return the access token and cookie
+    }
+
+    [HttpGet("userInfo")]
+    public async Task<IActionResult> UserInfo()
+    {
+        return Ok(_mapper.Map<UserDTO>(await _authService.GetCurrentUser()));
     }
 
     private void SetCookie(string newRefresh)
